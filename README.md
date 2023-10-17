@@ -1,31 +1,14 @@
-# github.com/tiredofit/docker-alpine
-
-[![GitHub release](https://img.shields.io/github/v/tag/tiredofit/docker-alpine?style=flat-square)](https://github.com/tiredofit/docker-alpine/releases/latest)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/tiredofit/docker-alpine/main.yml?branch=main&style=flat-square)](https://github.com/tiredofit/docker-alpine/actions)
-[![Docker Stars](https://img.shields.io/docker/stars/tiredofit/alpine.svg?style=flat-square&logo=docker)](https://hub.docker.com/r/tiredofit/alpine/)
-[![Docker Pulls](https://img.shields.io/docker/pulls/tiredofit/alpine.svg?style=flat-square&logo=docker)](https://hub.docker.com/r/tiredofit/alpine/)
-[![Become a sponsor](https://img.shields.io/badge/sponsor-tiredofit-181717.svg?logo=github&style=flat-square)](https://github.com/sponsors/tiredofit)
-[![Paypal Donate](https://img.shields.io/badge/donate-paypal-00457c.svg?logo=paypal&style=flat-square)](https://www.paypal.me/tiredofit)
-
-* * *
-
-
 ## About
 
-Dockerfile to build an [alpine](https://www.alpinelinux.org/) linux container image.
+Dockerfile to build an [alpine](https://www.alpinelinux.org/) linux container image. Forked from github.com/tiredofit/docker-alpine
 
 * Currently tracking 3.5, 3.6, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12, 3.13, 3.14, 3.15, 3.16, 3.17, 3.18 and edge.
 * [s6 overlay](https://github.com/just-containers/s6-overlay) enabled for PID 1 init capabilities.
-* [zabbix-agent](https://zabbix.org) (Classic and Modern) for individual container monitoring.
 * Scheduling via cron with other helpful tools (bash, curl, less, logrotate, nano, vi) for easier management.
 * Messaging ability via MSMTP enabled to send mail from container to external SMTP server.
 * Firewall included with capabilities of monitoring logs to block remote hosts via [Fail2ban](https://github.com/fail2ban/fail2ban)
 * Logshipping capabilities to remote log analysis servers via [Fluent-Bit](https://github.com/fluent/fluent-bit)
 * Ability to update User ID and Group ID permissions dynamically.
-
-## Maintainer
-
-- [Dave Conroy](https://github/tiredofit)
 
 ## Table of Contents
 
@@ -218,58 +201,6 @@ See the [MSMTP Configuration Options](https://marlam.de/msmtp/msmtp.html) for fu
 | `SMTP_STARTTLS`            | Start TLS from within session                     | `FALSE`         |         |
 | `SMTP_TLSCERTCHECK`        | Check remote certificate                          | `FALSE`         |         |
 | `SMTP_ALLOW_FROM_OVERRIDE` | SMTP Allow From Override                          | ``              |         |
-
-See The [Official Zabbix Agent Documentation](https://www.zabbix.com/documentation/5.4/manual/appendix/config/zabbix_agentd)
-for information about the following Zabbix values.
-
-#### Monitoring Options
-This image includes the capability of using agents inside the image to monitor metrics from applications. Presently at this time it only supports Zabbix as a monitoring platform, however is extendable to other platforms with little effort.
-
-| Parameter                     | Description                                  | Default  |
-| ----------------------------- | -------------------------------------------- | -------- |
-| `CONTAINER_ENABLE_MONITORING` | Enable Monitoring of applications or metrics | `TRUE`   |
-| `CONTAINR_MONITORING_BACKEND` | What monitoring agent to use `zabbix`        | `zabbix` |
-
-##### Zabbix Options
-
-This image comes with Zabbix Agent 1 (Classic or C compiled) and Zabbix Agent 2 (Modern, or Go compiled). See which variables work for each version and make your agent choice. Drop files in `/etc/zabbix/zabbix_agentd.conf.d` to setup your metrics. The environment variables below only affect the system end of the configuration. If you wish to use your own system configuration without these variables, change `ZABBIX_SETUP_TYPE` to `MANUAL`
-
-| Parameter                            | Description                                                                                   | Default                  | 1   | 2   | `_FILE` |
-| ------------------------------------ | --------------------------------------------------------------------------------------------- | ------------------------ | --- | --- | ------- |
-| `ZABBIX_SETUP_TYPE`                  | Automatically generate configuration based on these variables `AUTO` or `MANUAL`              | `AUTO`                   | x   | x   |         |
-| `ZABBIX_AGENT_TYPE`                  | Which version of Zabbix Agent to load `1` or `2`                                              | 1                        | N/A | N/A |         |
-| `ZABBIX_AGENT_LOG_PATH`              | Log File Path                                                                                 | `/var/log/zabbix/agent/` | x   | x   |         |
-| `ZABBIX_AGENT_LOG_FILE`              | Logfile name                                                                                  | `zabbix_agentd.log`      | x   | x   |         |
-| `ZABBIX_CERT_PATH`                   | Zabbix Certificates Path                                                                      | `/etc/zabbix/certs/`     | x   | x   |         |
-| `ZABBIX_ENABLE_AUTOREGISTRATION`     | Use internal routine for Agent autoregistration based on config files with # Autoregister tag | `TRUE`                   | x   | x   |         |
-| `ZABBIX_ENABLE_AUTOREGISTRATION_DNS` | Register with DNS name instead of IP Address when autoregistering                             | `TRUE`                   | x   | x   |         |
-| `ZABBIX_AUTOREGISTRATION_DNS_NAME`   | (optional) DNS Name to provide for auto register. Uses `CONTAINER_NAME` as default            | `$CONTAINER_NAME`        | x   | x   |         |
-| `ZABBIX_AUTOREGISTRATION_DNS_SUFFIX` | If you want to append something after the generated DNS Name                                  | ``                       | x   | x   |         |
-| `ZABBIX_ENCRYPT_PSK_ID`              | Zabbix Encryption PSK ID                                                                      | ``                       | x   | x   | x       |
-| `ZABBIX_ENCRYPT_PSK_KEY`             | Zabbix Encryption PSK Key                                                                     | ``                       | x   | x   | x       |
-| `ZABBIX_ENCRYPT_PSK_FILE`            | Zabbix Encryption PSK File (If not using above env var)                                       | ``                       | x   | x   |         |
-| `ZABBIX_LOG_FILE_SIZE`               | Logfile size                                                                                  | `0`                      | x   | x   |         |
-| `ZABBIX_DEBUGLEVEL`                  | Debug level                                                                                   | `1`                      | x   | x   |         |
-| `ZABBIX_REMOTECOMMANDS_ALLOW`        | Enable remote commands                                                                        | `*`                      | x   | x   |         |
-| `ZABBIX_REMOTECOMMANDS_DENY`         | Deny remote commands                                                                          | ``                       | x   | x   |         |
-| `ZABBIX_REMOTECOMMANDS_LOG`          | Enable remote commands Log (`0`/`1`)                                                          | `1`                      | x   | ``  |         |
-| `ZABBIX_SERVER`                      | Allow connections from Zabbix server IP                                                       | `0.0.0.0/0`              | x   | x   |         |
-| `ZABBIX_STATUS_PORT`                 | Agent will listen to this port for status requests (http://localhost:port/status)             | `10050`                  | ``  | x   |         |
-| `ZABBIX_LISTEN_PORT`                 | Zabbix Agent listening port                                                                   | `10050`                  | x   | x   |         |
-| `ZABBIX_LISTEN_IP`                   | Zabbix Agent listening IP                                                                     | `0.0.0.0`                | x   | x   |         |
-| `ZABBIX_START_AGENTS`                | How many Zabbix Agents to start                                                               | `1`                      | x   | ``  |         |
-| `ZABBIX_SERVER_ACTIVE`               | Server for active checks                                                                      | `zabbix-proxy`           | x   | x   | x       |
-| `ZABBIX_HOSTNAME`                    | Container hostname to report to server                                                        | `$CONTAINER_NAME`        | x   | x   |         |
-| `ZABBIX_REFRESH_ACTIVE_CHECKS`       | Seconds to refresh Active Checks                                                              | `120`                    | x   | x   |         |
-| `ZABBIX_BUFFER_SEND`                 | Buffer Send                                                                                   | `5`                      | x   | x   |         |
-| `ZABBIX_BUFFER_SIZE`                 | Buffer Size                                                                                   | `100`                    | x   | x   |         |
-| `ZABBIX_MAXLINES_SECOND`             | Max Lines Per Second                                                                          | `20`                     | x   | ``  |         |
-| `ZABBIX_SOCKET`                      | Socket for communicating                                                                      | `/tmp/zabbix.sock`       | ``  | x   |         |
-| `ZABBIX_ALLOW_ROOT`                  | Allow running as root                                                                         | `1`                      | x   | ``  |         |
-| `ZABBIX_USER`                        | User to start agent                                                                           | `zabbix`                 | x   | x   |         |
-| `ZABBIX_USER_SUDO`                   | Allow Zabbix user to utilize sudo commands                                                    | `TRUE`                   | x   | x   |         |
-
-This image supports autoregistering configuration as an Active Agent to a Zabbix Proxy or a Server. It looks in `/etc/zabbix_agent.conf.d/*.conf` for the string `# Autoregister=` and takes these values and adds it to the `HostMetadata` configuration entry automatically wrapped around `:` eg `:application:` . Use it by creating an Auto register rule and search for that string. You can find server templates in this repository in the `[zabbix_templates](zabbix_templates/)` directory.
 
 #### Logging Options
 
@@ -519,7 +450,6 @@ When using this as a base image, create statements in your startup scripts to ch
 and set various parameters in your applications to output more detail, enable debugging modes, and so on.
 In this base image it does the following:
 
-* Sets zabbix-agent to output logs in verbosity
 * Shows all script output (equivalent to set -x)
 
 ## Maintenance
@@ -531,23 +461,6 @@ For debugging and maintenance purposes you may want access the containers shell.
 ``bash
 docker exec -it (whatever your container name is) bash
 ``
-## Support
-
-These images were built to serve a specific need in a production environment and gradually have had more functionality added based on requests from the community.
-### Usage
-- The [Discussions board](../../discussions) is a great place for working with the community on tips and tricks of using this image.
-- Consider [sponsoring me](https://github.com/sponsors/tiredofit) for personalized support
-
-### Bugfixes
-- Please, submit a [Bug Report](issues/new) if something isn't working as expected. I'll do my best to issue a fix in short order.
-
-### Feature Requests
-- Feel free to submit a feature request, however there is no guarantee that it will be added, or at what timeline.
-- Consider [sponsoring me](https://github.com/sponsors/tiredofit) regarding development of features.
-
-### Updates
-- Best effort to track upstream changes, More priority if I am actively using the image in a production environment.
-- Consider [sponsoring me](https://github.com/sponsors/tiredofit) for up to date releases.
 
 ## License
 MIT. See [LICENSE](LICENSE) for more details.
