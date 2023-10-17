@@ -8,13 +8,11 @@ ARG DOAS_VERSION
 ARG FLUENTBIT_VERSION
 ARG S6_OVERLAY_VERSION
 ARG YQ_VERSION
-ARG ZABBIX_VERSION
 
 ### Set defaults
 ENV FLUENTBIT_VERSION=${FLUENTBIT_VERSION:-"2.1.10"} \
     S6_OVERLAY_VERSION=${S6_OVERLAY_VERSION:-"3.1.5.0"} \
     YQ_VERSION=${YQ_VERSION:-"v4.35.2"} \
-    ZABBIX_VERSION=${ZABBIX_VERSION:-"6.4.7"} \
     DOAS_VERSION=${DOAS_VERSION:-"v6.8.2"} \
     DEBUG_MODE=FALSE \
     TIMEZONE=Etc/GMT \
@@ -22,14 +20,12 @@ ENV FLUENTBIT_VERSION=${FLUENTBIT_VERSION:-"2.1.10"} \
     CONTAINER_SCHEDULING_BACKEND=cron \
     CONTAINER_ENABLE_MESSAGING=TRUE \
     CONTAINER_MESSAGING_BACKEND=msmtp \
-    CONTAINER_ENABLE_MONITORING=TRUE \
-    CONTAINER_MONITORING_BACKEND=zabbix \
     CONTAINER_ENABLE_LOGSHIPPING=FALSE \
     S6_GLOBAL_PATH=/command:/usr/bin:/bin:/usr/sbin:sbin:/usr/local/bin:/usr/local/sbin \
     S6_KEEP_ENV=1 \
     S6_CMD_WAIT_FOR_SERVICES_MAXTIME=0 \
-    IMAGE_NAME="tiredofit/alpine" \
-    IMAGE_REPO_URL="https://github.com/tiredofit/docker-alpine/"
+    IMAGE_NAME="docker-alpine" \
+    IMAGE_REPO_URL="https://github.com/Deadfire-/docker-alpine"
 
 ## Mono Repo workarounds
 RUN case "$(cat /etc/os-release | grep VERSION_ID | cut -d = -f 2 | cut -d . -f 1,2)" in \
@@ -38,7 +34,7 @@ RUN case "$(cat /etc/os-release | grep VERSION_ID | cut -d = -f 2 | cut -d . -f 
     esac ; \
     \
     case "$(cat /etc/os-release | grep VERSION_ID | cut -d = -f 2 | cut -d . -f 1,2 | cut -d _ -f 1)" in \
-        3.11 | 3.12 | 3.13 | 3.14 | 3.15 | 3.16 | 3.17* | 3.18* | edge ) zabbix_args=" --enable-agent2 " ; zabbix_agent2=true ; fluentbit_make=true ; echo "** Building Zabbix Agent 2" ; echo "** Building Fluent Bit" ; echo "** Building yq" ;; \
+        3.11 | 3.12 | 3.13 | 3.14 | 3.15 | 3.16 | 3.17* | 3.18* | edge ) fluentbit_make=true ; echo "** Building Fluent Bit" ; echo "** Building yq" ;; \
         *) : ;; \
     esac ; \
     case "$(cat /etc/os-release | grep VERSION_ID | cut -d = -f 2 | cut -d . -f 1,2 | cut -d _ -f 1)" in \
@@ -114,21 +110,6 @@ RUN case "$(cat /etc/os-release | grep VERSION_ID | cut -d = -f 2 | cut -d . -f 
                 musl-dev \
                 && \
     \
-    apk add -t .zabbix-build-deps \
-                alpine-sdk \
-                autoconf \
-                automake \
-                binutils \
-                coreutils \
-                g++ \
-                openssl-dev \
-                make \
-                pcre-dev \
-                zlib-dev \
-                ${additional_packages} \
-                ${upx} \
-                && \
-    \
     apk add -t .fluentbit-build-deps \
                 bison \
                 cmake \
@@ -159,7 +140,6 @@ RUN case "$(cat /etc/os-release | grep VERSION_ID | cut -d = -f 2 | cut -d . -f 
     make install ; \
     fi ; \
     ### Golang installation
-    if [ "$zabbix_agent2" = "true" ] ; then \
     mkdir -p /usr/src/golang ; \
     curl -sSL https://dl.google.com/go/go${GOLANG_VERSION}.src.tar.gz | tar xvfz - --strip 1 -C /usr/src/golang ; \
     cd /usr/src/golang/src/ ; \
@@ -174,52 +154,6 @@ RUN case "$(cat /etc/os-release | grep VERSION_ID | cut -d = -f 2 | cut -d . -f 
     go build ; \
     cp -R yq /usr/local/bin ; \
     fi ; \
-    \
-    ### Zabbix installation
-    addgroup -g 10050 zabbix && \
-    adduser -S -D -H -h /dev/null -s /sbin/nologin -G zabbix -u 10050 zabbix && \
-    mkdir -p /etc/zabbix && \
-    mkdir -p /etc/zabbix/zabbix_agentd.conf.d && \
-    mkdir -p /var/lib/zabbix && \
-    mkdir -p /var/lib/zabbix/enc && \
-    mkdir -p /var/lib/zabbix/modules && \
-    mkdir -p /var/lib/zabbix/run && \
-    mkdir -p /var/log/zabbix && \
-    chown --quiet -R zabbix:root /etc/zabbix && \
-    chown --quiet -R zabbix:root /var/lib/zabbix && \
-    chown --quiet -R zabbix:root /var/log/zabbix && \
-    chmod -R 770 /var/lib/zabbix/run && \
-    \
-    #### Zabbix compilation
-    mkdir -p /usr/src/zabbix && \
-    curl -sSL https://github.com/zabbix/zabbix/archive/${ZABBIX_VERSION}.tar.gz | tar xfz - --strip 1 -C /usr/src/zabbix && \
-    cd /usr/src/zabbix && \
-    ./bootstrap.sh 1>/dev/null && \
-    export CFLAGS="-fPIC -pie -Wl,-z,relro -Wl,-z,now" && \
-    ./configure \
-            --prefix=/usr \
-            --silent \
-            --sysconfdir=/etc/zabbix \
-            --libdir=/usr/lib/zabbix \
-            --datadir=/usr/lib \
-            --enable-agent ${zabbix_args} \
-            --enable-ipv6 \
-            --with-openssl \
-            && \
-    make -j"$(nproc)" -s 1>/dev/null && \
-    cp src/zabbix_agent/zabbix_agentd /usr/sbin/zabbix_agentd && \
-    cp src/zabbix_get/zabbix_get /usr/sbin/zabbix_get && \
-    cp src/zabbix_sender/zabbix_sender /usr/sbin/zabbix_sender && \
-    if [ "$zabbix_agent2" = "true" ] ; then cp src/go/bin/zabbix_agent2 /usr/sbin/zabbix_agent2 ; fi ; \
-    strip /usr/sbin/zabbix_agentd && \
-    strip /usr/sbin/zabbix_get && \
-    strip /usr/sbin/zabbix_sender && \
-    if [ "$zabbix_agent2" = true ] ; then strip /usr/sbin/zabbix_agent2 ; fi ; \
-    if [ "$apkArch" = "x86_64" ] && [ "$no_upx" != "true" ]; then upx /usr/sbin/zabbix_agentd ; fi ; \
-    if [ "$apkArch" = "x86_64" ] && [ "$no_upx" != "true" ]; then upx /usr/sbin/zabbix_get ; fi ; \
-    if [ "$apkArch" = "x86_64" ] && [ "$no_upx" != "true" ]; then upx /usr/sbin/zabbix_sender ; fi ; \
-    if [ "$apkArch" = "x86_64" ] && [ "$zabbix_agent2" = "true" ] && [ "$no_upx" != "true" ]; then upx /usr/sbin/zabbix_agent2 ; fi ; \
-    rm -rf /usr/src/zabbix && \
     \
 ### Fluentbit compilation
     mkdir -p /usr/src/fluentbit && \
@@ -313,7 +247,6 @@ RUN case "$(cat /etc/os-release | grep VERSION_ID | cut -d = -f 2 | cut -d . -f 
     apk del --purge \
             .fluentbit-build-deps \
             .golang-build-deps \
-            .zabbix-build-deps \
             gettext \
             && \
     rm -rf /etc/*.apk.new && \
