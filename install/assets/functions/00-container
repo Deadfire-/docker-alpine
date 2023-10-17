@@ -154,28 +154,6 @@ EOF
     fi
 }
 
-create_zabbix() {
-    ## Usage <Zabbix configuration name> (optional custom Autoregister name)
-    ## e.g. create_zabbix cron
-    ## If you dont put an autoregister argument it will just use the Configuration Name
-
-    if [ -n "$1" ] ; then
-        if [ -n "$2" ] ; then
-            autoregister=$2
-        else
-            autoregister=$1
-        fi
-        print_debug "Adding Zabbix Auto Register configuration for '$1'"
-        if var_true "${CONTAINER_ENABLE_MONITORING}" && [ "${CONTAINER_MONITORING_BACKEND,,}" = "zabbix" ]; then
-            source /assets/defaults/03-monitoring
-            cat <<EOF > "${ZABBIX_CONFIG_PATH}"/"${ZABBIX_CONFIG_FILE}.d"/tiredofit_"$1".conf
-# Zabbix $1 Configuration - Automatically Generated
-# Autoregister=$autoregister
-EOF
-        fi
-    fi
-}
-
 custom_files() {
     ## Copy files from one lcoation to somewhere else on the file system
     ## eg. Copy all files in /assets/custom (Default ENV CONTAINER_CUSTOM_PATH) to /www/html  'custom_files /www/html'
